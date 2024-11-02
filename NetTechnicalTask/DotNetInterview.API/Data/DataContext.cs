@@ -6,11 +6,19 @@ namespace DotNetInterview.API.Data
     public sealed class DataContext : DbContext
     {
         public DbSet<Item> Items { get; set; }
+        public DbSet<Variation> Variations { get; set; } 
 
         public DataContext(DbContextOptions<DataContext> options)
             : base(options)
         {
-            Database.EnsureCreated();
+            try
+            {
+                Database.EnsureCreated();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException != null && ex.InnerException.Message.Contains("table already exists"))
+            {
+                // Log exception if necessary, or handle accordingly
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
