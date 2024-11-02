@@ -11,14 +11,9 @@ namespace DotNetInterview.API.Data
         public DataContext(DbContextOptions<DataContext> options)
             : base(options)
         {
-            try
-            {
-                Database.EnsureCreated();
-            }
-            catch (DbUpdateException ex) when (ex.InnerException != null && ex.InnerException.Message.Contains("table already exists"))
-            {
-                // Log exception if necessary, or handle accordingly
-            }
+            
+            Database.EnsureCreated();
+            
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

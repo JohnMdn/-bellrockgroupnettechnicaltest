@@ -13,11 +13,11 @@ using Xunit;
 
 namespace DotNetInterview.Tests.BlackBoxContractTests
 {
-    public class ItemControllerBlackBoxTests : IClassFixture<WebApplicationFactory<Program>>
+    public class ItemControllerBlackBoxAndIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public ItemControllerBlackBoxTests(WebApplicationFactory<Program> factory)
+        public ItemControllerBlackBoxAndIntegrationTests(WebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }
@@ -189,6 +189,10 @@ namespace DotNetInterview.Tests.BlackBoxContractTests
 
                 Assert.IsType<int>(variation.Quantity); // Check that Quantity is of type int
             }
+
+            // Tear down
+            // Act
+            response = await _client.DeleteAsync($"/api/items/{newItem.Id}");
         }
 
         [Fact]
@@ -218,6 +222,8 @@ namespace DotNetInterview.Tests.BlackBoxContractTests
 
             // Assert Status Code
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+           
         }
 
         [Fact]
@@ -231,6 +237,55 @@ namespace DotNetInterview.Tests.BlackBoxContractTests
 
             // Assert Status Code
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        }
+
+        // Integration tests
+
+      
+        [Fact]
+        public async Task GetItemById_ShouldReturnSpecificItemWithCorrectDiscount()
+        {
+            // Arrange
+            var response = await _client.GetAsync("/api/items");
+            var items = await response.Content.ReadFromJsonAsync<List<ItemDto>>();
+            var seedItem = items.Single(i => i.Reference == "B456");
+
+            // Act
+            var result = await _client.GetAsync($"/api/items/{seedItem.Id}");
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var item = await result.Content.ReadFromJsonAsync<ItemDto>();
+            item.Should().NotBeNull();
+            item.Id.Should().Be(seedItem.Id);
+            item.DiscountedPrice.Should().Be(15); // No discount for item2
+            item.DiscountPercentage.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task UpdateItem_WithModifiedQuantity_ShouldApplyCorrectDiscount()
+        {
+            // Arrange
+            var response = await _client.GetAsync("/api/items");
+            var items = await response.Content.ReadFromJsonAsync<List<ItemDto>>();
+            var itemToUpdate = items.Single(i => i.Reference == "A123");
+
+            // Modify the quantity to exceed the threshold for the discount
+            itemToUpdate.Variations[0].Quantity = 8; // Setting to 8 to trigger 20% discount
+
+            // Act
+            var updateResponse = await _client.PutAsJsonAsync($"/api/items/{itemToUpdate.Id}", itemToUpdate);
+            updateResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            // Retrieve the updated item by ID
+            var getResponse = await _client.GetAsync($"/api/items/{itemToUpdate.Id}");
+            getResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Ensure we received a successful response
+
+            var updatedItem = await getResponse.Content.ReadFromJsonAsync<ItemDto>();
+
+            // Assert updated discount
+            updatedItem.Should().NotBeNull(); // Ensure that the updated item is not null
+            updatedItem.DiscountedPrice.Should().Be(28.0m); // Expecting a 20% discount on the original price of 35
+            updatedItem.DiscountPercentage.Should().Be(20); // Verify that the discount percentage is applied correctly
         }
     }
 }
