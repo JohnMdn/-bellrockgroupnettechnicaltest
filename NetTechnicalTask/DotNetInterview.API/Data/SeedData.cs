@@ -1,15 +1,16 @@
 using DotNetInterview.API.Domain;
+using DotNetInterview.API.Utility;
 using Microsoft.EntityFrameworkCore;
 
-namespace DotNetInterview.API;
+namespace DotNetInterview.API.Data;
 
-internal static class SeedData
+public static class SeedData
 {
     public static void Load(ModelBuilder modelBuilder)
     {
         var item1 = new Item
         {
-            Id = Guid.NewGuid(),
+            Id = DefaultGuid.Default,
             Reference = "A123",
             Name = "Shorts",
             Price = 35,

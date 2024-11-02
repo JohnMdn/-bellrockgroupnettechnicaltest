@@ -1,7 +1,7 @@
 ﻿using DotNetInterview.API.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace DotNetInterview.API
+namespace DotNetInterview.API.Data
 {
     public sealed class DataContext : DbContext
     {
@@ -12,7 +12,7 @@ namespace DotNetInterview.API
         {
             Database.EnsureCreated();
         }
-        
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             SeedData.Load(modelBuilder);
